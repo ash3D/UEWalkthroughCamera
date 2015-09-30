@@ -4,15 +4,6 @@ namespace UnrealBuildTool.Rules
 
 	public class UEWalkthroughCamera : ModuleRules
 	{
-		// not available from ModuleRules in 4.7 for some reason
-		public string ModuleDirectory
-		{
-			get
-			{
-				return Path.GetDirectoryName(RulesCompiler.GetModuleFilename(GetType().Name));
-			}
-		}
-
 		public UEWalkthroughCamera(TargetInfo Target)
 		{
 			bEnableExceptions = true;
