@@ -1,14 +1,14 @@
 {
 	"FileVersion" : 3,
-	
-	"FriendlyName" : "Walkthrough Camera",
 	"Version" : 0.1,
 	"VersionName" : "0.1",
+	"FriendlyName" : "Walkthrough Camera",
 	"CreatedBy" : "ash",
 	"CreatedByURL" : "https://github.com/ash3D",
 	"Description" : "Camera animation based on spline interpolation.",
 	"Category" : "Animation",
 	"EnabledByDefault" : true,
+	"IsBetaVersion": true,
 	
 	"Modules" :
 	[
