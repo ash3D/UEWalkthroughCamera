@@ -15,6 +15,8 @@ namespace UnrealBuildTool.Rules
 
 		public UEWalkthroughCamera(TargetInfo Target)
 		{
+			bEnableExceptions = true;
+
 			string DGLE = Path.Combine(ModuleDirectory, "..", "DWinDirect");
 
 			PublicIncludePaths.AddRange(
