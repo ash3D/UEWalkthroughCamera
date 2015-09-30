@@ -3,7 +3,7 @@
 #include "GameFramework/Actor.h"
 #include "InterpolationPointActor.generated.h"
 
-UCLASS()
+UCLASS(meta = (ShortTooltip = "Defines point for WalkthroughCameraPawn animation curve. Member \"id\" determines order."))
 class AInterpolationPointActor : public AActor
 {
 	GENERATED_BODY()

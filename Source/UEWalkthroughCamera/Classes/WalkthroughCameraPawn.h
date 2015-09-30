@@ -9,7 +9,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(Walkthrough, Log, All);
 
-UCLASS()
+UCLASS(meta = (ShortTooltip = "This camera will follow spline curve defined by sequence of points represented by InterpolationPointActor."))
 class AWalkthroughCameraPawn : public APawn
 {
 	GENERATED_BODY()
