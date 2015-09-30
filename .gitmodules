@@ -1,0 +1,3 @@
+[submodule "Source/DWinDirect"]
+	path = Source/DWinDirect
+	url = https://github.com/DGLE-HQ/DWinDirect.git
