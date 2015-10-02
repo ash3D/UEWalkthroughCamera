@@ -73,13 +73,6 @@ AWalkthroughCameraPawn::AWalkthroughCameraPawn()
 
 AWalkthroughCameraPawn::~AWalkthroughCameraPawn() = default;
 
-// Called when the game starts or when spawned
-void AWalkthroughCameraPawn::BeginPlay()
-{
-	Super::BeginPlay();
-	
-}
-
 // Called every frame
 void AWalkthroughCameraPawn::Tick( float DeltaTime )
 {
@@ -124,13 +117,6 @@ void AWalkthroughCameraPawn::Tick( float DeltaTime )
 		if (time > 1)
 			OnFinish.Broadcast();
 	}
-}
-
-// Called to bind functionality to input
-void AWalkthroughCameraPawn::SetupPlayerInputComponent(class UInputComponent* InputComponent)
-{
-	Super::SetupPlayerInputComponent(InputComponent);
-
 }
 
 void AWalkthroughCameraPawn::Run(float speed, float transient, float smooth, bool uniformSpeed)
