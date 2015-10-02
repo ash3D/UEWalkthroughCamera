@@ -5,20 +5,60 @@
 
 DEFINE_LOG_CATEGORY(Walkthrough)
 
+typedef Math::Splines::CCatmullRom<float, 3> TCatmullRom;
+typedef Math::Splines::CBesselOverhauser<float, 3> TBesselOverhauser;
+typedef std::common_type<TCatmullRom::TPoint, TBesselOverhauser::TPoint>::type TPoint;
+
+class AWalkthroughCameraPawn::ISpline
+{
+	TPoint pos;
+
+protected:
+	ISpline() = default;
+	ISpline(ISpline &) = delete;
+	void operator =(ISpline &) = delete;
+
+public:
+	virtual ~ISpline() = default;
+
+private:
+	virtual TPoint operator ()(TPoint::ElementType u) const = 0;
+
+public:
+	void Update(TPoint::ElementType u)
+	{
+		pos = operator ()(u);
+	}
+
+	TPoint Get() const
+	{
+		return pos;
+	}
+};
+
 template<class Spline>
-class AWalkthroughCameraPawn::CSplineProxy : public ISpline
+class AWalkthroughCameraPawn::CSplineProxy final : public ISpline
 {
 	Spline spline;
 
 public:
 	template<typename ...Args>
-	CSplineProxy(Args &&...args) : spline(std::forward<Args>(args)...) {}
+	CSplineProxy(Args &&...args) : spline(std::forward<Args>(args)...)
+	{
+		Update(0);
+	}
 
+private:
 	virtual TPoint operator ()(TPoint::ElementType u) const override
 	{
 		return spline(u);
 	}
 };
+
+void AWalkthroughCameraPawn::TSplineDeleter::operator ()(ISpline *spline) const
+{
+	delete spline;
+}
 
 // Sets default values
 AWalkthroughCameraPawn::AWalkthroughCameraPawn()
@@ -30,6 +70,8 @@ AWalkthroughCameraPawn::AWalkthroughCameraPawn()
 	cameraComponent->RelativeLocation = FVector::ZeroVector;
 	cameraComponent->bUsePawnControlRotation = false;
 }
+
+AWalkthroughCameraPawn::~AWalkthroughCameraPawn() = default;
 
 // Called when the game starts or when spawned
 void AWalkthroughCameraPawn::BeginPlay()
@@ -45,8 +87,9 @@ void AWalkthroughCameraPawn::Tick( float DeltaTime )
 
 	if (time <= 1)
 	{
+		assert(spline);
+
 		const bool start = time == 0;
-		const auto pos = start ? (*spline)(0) : nextPos;
 
 		using namespace Math::Hermite;
 		float u = time += DeltaTime * speed;
@@ -65,7 +108,9 @@ void AWalkthroughCameraPawn::Tick( float DeltaTime )
 			u += 1.f - transient;
 		}
 
-		nextPos = (*spline)(u);
+		const auto pos = spline->Get();
+		spline->Update(u);
+		const auto nextPos = spline->Get();
 
 		const FMatrix
 			swapXY({ 0, 1, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, FVector{ 0 }),
@@ -175,8 +220,13 @@ void AWalkthroughCameraPawn::Run(float speed, float transient, float smooth, boo
 
 	CPointIterator begin(points.cbegin()), end(points.cend());
 	spline = uniformSpeed
+#if 0
 		? static_cast<decltype(spline)>(std::make_unique<CSplineProxy<TBesselOverhauser>>	(std::move(begin), std::move(end)))
 		: static_cast<decltype(spline)>(std::make_unique<CSplineProxy<TCatmullRom>>			(std::move(begin), std::move(end)));
+#else
+		? static_cast<decltype(spline)>(std::unique_ptr<CSplineProxy<TBesselOverhauser>,	TSplineDeleter>(new CSplineProxy<TBesselOverhauser>	(std::move(begin), std::move(end))))
+		: static_cast<decltype(spline)>(std::unique_ptr<CSplineProxy<TCatmullRom>,			TSplineDeleter>(new CSplineProxy<TCatmullRom>		(std::move(begin), std::move(end))));
+#endif
 }
 
 void AWalkthroughCameraPawn::Stop()

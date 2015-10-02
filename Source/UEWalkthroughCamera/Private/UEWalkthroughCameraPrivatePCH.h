@@ -9,6 +9,7 @@
 #include <iostream>
 #include <numeric>
 #include <utility>
+#include <type_traits>
 #include <cassert>
 #include <cstdint>
 #include <cmath>
