@@ -41,7 +41,7 @@ private:
 		TSplineDeleter with external 'operator ()' used as a workaround.
 		TODO: track changes in UE4 which can affect this situation.
 	*/
-	class ISpline;
+	struct ISpline;
 	template<class Spline> class CSplineProxy;
 
 	struct TSplineDeleter
@@ -50,6 +50,5 @@ private:
 	};
 	std::unique_ptr<ISpline, TSplineDeleter> spline;
 
-	FQuat curRot;
 	float time = std::numeric_limits<float>::infinity(), speed, transient, smooth;
 };

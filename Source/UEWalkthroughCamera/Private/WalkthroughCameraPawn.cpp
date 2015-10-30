@@ -1,55 +1,34 @@
 #include "UEWalkthroughCameraPrivatePCH.h"
 #include "WalkthroughCameraPawn.h"
 #include "InterpolationPointActor.h"
+#include "splines.h"
 
 
 DEFINE_LOG_CATEGORY(Walkthrough)
 
-typedef Math::Splines::CCatmullRom<float, 3> TCatmullRom;
-typedef Math::Splines::CBesselOverhauser<float, 3> TBesselOverhauser;
-typedef std::common_type<TCatmullRom::TPoint, TBesselOverhauser::TPoint>::type TPoint;
+using namespace Math::VectorMath::HLSL;
 
-class AWalkthroughCameraPawn::ISpline
+typedef Math::Splines::CCatmullRom<float, 3, float3> TCatmullRom;
+typedef Math::Splines::CBesselOverhauser<float, 3, float3> TBesselOverhauser;
+typedef std::common_type<TCatmullRom::Point, TBesselOverhauser::Point>::type Point;
+
+struct AWalkthroughCameraPawn::ISpline
 {
-	TPoint pos;
-
-protected:
-	ISpline() = default;
-	ISpline(ISpline &) = delete;
-	void operator =(ISpline &) = delete;
-
-public:
 	virtual ~ISpline() = default;
-
-private:
-	virtual TPoint operator ()(TPoint::ElementType u) const = 0;
-
-public:
-	void Update(TPoint::ElementType u)
-	{
-		pos = operator ()(u);
-	}
-
-	TPoint Get() const
-	{
-		return pos;
-	}
+	virtual Point operator ()(decltype(Point::pos)::ElementType u) const = 0;
 };
 
 template<class Spline>
 class AWalkthroughCameraPawn::CSplineProxy final : public ISpline
 {
-	Spline spline;
+	const Spline spline;
 
 public:
 	template<typename ...Args>
-	CSplineProxy(Args &&...args) : spline(std::forward<Args>(args)...)
-	{
-		Update(0);
-	}
+	CSplineProxy(Args &&...args) : spline(std::forward<Args>(args)...) {}
 
 private:
-	virtual TPoint operator ()(TPoint::ElementType u) const override
+	virtual Point operator ()(typename std::enable_if<true, decltype(Point::pos)>::type::ElementType u) const override
 	{
 		return spline(u);
 	}
@@ -82,8 +61,6 @@ void AWalkthroughCameraPawn::Tick( float DeltaTime )
 	{
 		assert(spline);
 
-		const bool start = time == 0;
-
 		using namespace Math::Hermite;
 		float u = time += DeltaTime * speed;
 		if (u < transient)
@@ -101,18 +78,9 @@ void AWalkthroughCameraPawn::Tick( float DeltaTime )
 			u += 1.f - transient;
 		}
 
-		const auto pos = spline->Get();
-		spline->Update(u);
-		const auto nextPos = spline->Get();
-
-		const FMatrix
-			swapXY({ 0, 1, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, FVector{ 0 }),
-			lookAt(FLookAtMatrix(FVector(pos.x, pos.y, pos.z), FVector(nextPos.x, nextPos.y, nextPos.z), FVector::UpVector));
-		FTransform camXform(FTransform(FQuat::MakeFromEuler(FVector(0, -90, 0))).ToMatrixWithScale() * swapXY * lookAt.Inverse());
-		const FQuat newRot = camXform.GetRotation();
-		const float weightedSmooth = smooth / DeltaTime;
-		camXform.SetRotation(curRot = start ? newRot : FMath::Lerp(newRot, curRot, weightedSmooth / (1.f + weightedSmooth)));
-		cameraComponent->SetWorldTransform(camXform);
+		const auto point = spline->operator ()(u);
+		const auto &rot = std::get<0>(point.attribs);
+		cameraComponent->SetWorldLocationAndRotation({ point.pos.x, point.pos.y, point.pos.z }, { rot.x, rot.y, rot.z });
 
 		if (time > 1)
 			OnFinish.Broadcast();
@@ -121,11 +89,12 @@ void AWalkthroughCameraPawn::Tick( float DeltaTime )
 
 void AWalkthroughCameraPawn::Run(float speed, float transient, float smooth, bool uniformSpeed)
 {
-	std::list<std::pair<TPoint, int>> points;
+	std::list<std::pair<Point, int>> points;
 	for (TActorIterator<AInterpolationPointActor> actor(GetWorld()); actor; ++actor)
 	{
 		const auto pos = actor->GetActorLocation();
-		points.emplace_back(std::piecewise_construct, std::make_tuple(pos.X, pos.Y, pos.Z), std::make_tuple(actor->id));
+		const auto rot = actor->GetActorRotation();
+		points.emplace_back(std::piecewise_construct, std::make_tuple(decltype(Point::pos)(pos.X, pos.Y, pos.Z), std::tuple_element<0, decltype(Point::attribs)>::type(rot.Pitch, rot.Roll, rot.Yaw)), std::make_tuple(actor->id));
 	}
 	points.sort([](decltype(points)::const_reference left, decltype(points)::const_reference right)
 	{
@@ -144,7 +113,7 @@ void AWalkthroughCameraPawn::Run(float speed, float transient, float smooth, boo
 		auto prevPoint = points.cbegin();	// TODO: use C++14 generalized lambda capture
 		const float dist = std::accumulate(std::next(prevPoint), points.cend(), 0, [&prevPoint, uniformSpeed](float curDist, decltype(points)::const_reference point)
 		{
-			const float offset = Math::VectorMath::distance(prevPoint++->first, point.first);
+			const float offset = Math::VectorMath::distance(prevPoint++->first.pos, point.first.pos);
 			if (uniformSpeed)
 			{
 				assert(offset);
@@ -172,6 +141,7 @@ void AWalkthroughCameraPawn::Run(float speed, float transient, float smooth, boo
 		return;
 	}
 
+	Math::Splines::operator -<>(points.front().first, points.front().first);
 	points.emplace_front(2 * points.front().first - next(points.cbegin())->first, points.front().second - 1);
 	points.emplace_back(2 * points.back().first - prev(points.cend(), 2)->first, points.back().second + 1);
 
@@ -196,8 +166,8 @@ void AWalkthroughCameraPawn::Run(float speed, float transient, float smooth, boo
 #endif
 
 	public:
-		const TPoint &operator *() const { return TBase::operator *().first; }
-		const TPoint *operator ->() const { return &TBase::operator ->()->first; }
+		const Point &operator *() const { return TBase::operator *().first; }
+		const Point *operator ->() const { return &TBase::operator ->()->first; }
 		CPointIterator operator ++() { return TBase::operator ++(); }
 		CPointIterator operator --() { return TBase::operator --(); }
 		CPointIterator operator ++(int) { return TBase::operator ++(0); }
