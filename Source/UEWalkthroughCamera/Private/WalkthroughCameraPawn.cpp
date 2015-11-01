@@ -1,7 +1,6 @@
 #include "UEWalkthroughCameraPrivatePCH.h"
 #include "WalkthroughCameraPawn.h"
 #include "InterpolationPointActor.h"
-#include "splines.h"
 
 
 DEFINE_LOG_CATEGORY(Walkthrough)
@@ -141,7 +140,6 @@ void AWalkthroughCameraPawn::Run(float speed, float transient, float smooth, boo
 		return;
 	}
 
-	Math::Splines::operator -<>(points.front().first, points.front().first);
 	points.emplace_front(2 * points.front().first - next(points.cbegin())->first, points.front().second - 1);
 	points.emplace_back(2 * points.back().first - prev(points.cend(), 2)->first, points.back().second + 1);
 

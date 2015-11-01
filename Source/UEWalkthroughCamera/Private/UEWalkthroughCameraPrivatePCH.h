@@ -1,9 +1,10 @@
 #include "Engine.h"
 
-#pragma warning(default : 4503)
+#pragma warning(default : 4396 4503 4624 4800)
 
 #define DISABLE_MATRIX_SWIZZLES
 #include "vector math.h"
+#include "splines.h"
 #include "hermite.h"
 #include <list>
 #include <iterator>
