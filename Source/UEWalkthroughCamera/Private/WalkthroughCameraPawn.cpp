@@ -86,7 +86,7 @@ void AWalkthroughCameraPawn::Tick( float DeltaTime )
 	}
 }
 
-void AWalkthroughCameraPawn::Run(float speed, float transient, float smooth, bool uniformSpeed)
+void AWalkthroughCameraPawn::Run(float speed, float transient, bool uniformSpeed)
 {
 	std::list<std::pair<Point, int>> points;
 	for (TActorIterator<AInterpolationPointActor> actor(GetWorld()); actor; ++actor)
@@ -132,7 +132,6 @@ void AWalkthroughCameraPawn::Run(float speed, float transient, float smooth, boo
 		time = 0;
 		this->speed = speed / dist;
 		this->transient = fmin(transient * this->speed, .5f);
-		this->smooth = smooth;
 	}
 	catch (const TCHAR error[])
 	{

@@ -24,7 +24,7 @@ public:
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Walhthrough")
-	void Run(float speed, float transient, float smooth, bool uniformSpeed);
+	void Run(float speed, float transient, bool uniformSpeed);
 
 	UFUNCTION(BlueprintCallable, Category = "Walhthrough")
 	void Stop();
@@ -50,5 +50,5 @@ private:
 	};
 	std::unique_ptr<ISpline, TSplineDeleter> spline;
 
-	float time = std::numeric_limits<float>::infinity(), speed, transient, smooth;
+	float time = std::numeric_limits<float>::infinity(), speed, transient;
 };
