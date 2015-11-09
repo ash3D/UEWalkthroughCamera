@@ -1,6 +1,6 @@
 #include "Engine.h"
 
-#pragma warning(default : 4396 4503 4624 4800)
+#pragma warning(default : 4396 4503 4583 4624 4800)
 
 #define DISABLE_MATRIX_SWIZZLES
 #include "vector math.h"
