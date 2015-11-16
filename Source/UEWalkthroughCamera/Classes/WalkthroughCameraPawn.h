@@ -5,6 +5,10 @@
 #include "GameFramework/Pawn.h"
 #include "WalkthroughCameraPawn.generated.h"
 
+#if defined _MSC_VER && _MSC_VER < 1900
+#error old compiler version
+#endif
+
 DECLARE_LOG_CATEGORY_EXTERN(Walkthrough, Log, All);
 
 UCLASS(meta = (ShortTooltip = "This camera will follow spline curve defined by sequence of points represented by InterpolationPointActor."))
