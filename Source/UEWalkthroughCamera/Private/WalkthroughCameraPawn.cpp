@@ -109,8 +109,7 @@ void AWalkthroughCameraPawn::Run(float speed, float transient, bool uniformSpeed
 		if (points.size() == 1)	// slow!
 			points.push_back(points.front());
 
-		auto prevPoint = points.cbegin();	// TODO: use C++14 generalized lambda capture
-		const float dist = std::accumulate(std::next(prevPoint), points.cend(), 0, [&prevPoint, uniformSpeed](float curDist, decltype(points)::const_reference point)
+		const float dist = std::accumulate(std::next(points.cbegin()), points.cend(), 0, [prevPoint = points.cbegin(), uniformSpeed](float curDist, decltype(points)::const_reference point) mutable
 		{
 			const float offset = Math::VectorMath::distance(prevPoint++->first.pos, point.first.pos);
 			if (uniformSpeed)
