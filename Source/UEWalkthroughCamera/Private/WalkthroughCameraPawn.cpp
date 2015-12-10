@@ -46,6 +46,7 @@ AWalkthroughCameraPawn::AWalkthroughCameraPawn()
 
 	cameraComponent = FObjectInitializer::Get().CreateDefaultSubobject<UCameraComponent>(this, TEXT("WalkthroughCamera"));
 	cameraComponent->RelativeLocation = FVector::ZeroVector;
+	cameraComponent->RelativeRotation = FRotator::ZeroRotator;
 	cameraComponent->bUsePawnControlRotation = false;
 }
 
